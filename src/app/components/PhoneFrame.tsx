@@ -23,7 +23,14 @@ export function PhoneFrame() {
         }}
       >
         {/* Screen Content */}
-        <div style={{ height: "100%", overflow: "hidden" }}>
+        <div
+          style={{
+            height: "100%",
+            overflow: "hidden",
+            WebkitOverflowScrolling: "touch",
+            overscrollBehavior: "none",
+          }}
+        >
           <Outlet />
         </div>
       </div>
