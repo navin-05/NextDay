@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Background -->
+  <rect width="256" height="256" fill="#0D0D0D"/>
+  
+  <!-- Outer Circle Border -->
+  <circle cx="128" cy="128" r="115" fill="none" stroke="#FFFFFF" stroke-width="8"/>
+  
+  <!-- Left Rectangle -->
+  <rect x="80" y="88" width="28" height="80" fill="#FFFFFF" rx="2"/>
+  
+  <!-- Right Rectangle -->
+  <rect x="148" y="88" width="28" height="80" fill="#FFFFFF" rx="2"/>
+</svg>
