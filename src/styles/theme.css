@@ -124,8 +124,21 @@
     @apply border-border outline-ring/50;
   }
 
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
   body {
     @apply bg-background text-foreground;
+    background: #0D0D0D;
+  }
+
+  #root {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
   }
 
   /**
