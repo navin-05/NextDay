@@ -124,18 +124,22 @@
     @apply border-border outline-ring/50;
   }
 
-  html,
-  body {
+  html {
     margin: 0;
     padding: 0;
-    -webkit-user-select: none;
-    user-select: none;
+    font-size: var(--font-size);
+    height: 100%;
   }
 
   body {
     @apply bg-background text-foreground;
     background: #0D0D0D;
-    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 
   /* Hide scrollbars while keeping scroll functionality */
@@ -150,7 +154,7 @@
 
   #root {
     width: 100%;
-    height: 100vh;
+    height: 100%;
     display: flex;
     flex-direction: column;
   }
