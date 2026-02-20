@@ -5,13 +5,21 @@ export function PhoneFrame() {
     <div
       style={{
         width: "100%",
-        height: "100vh",
+        height: "100dvh",
         background: "#0D0D0D",
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
         display: "flex",
         flexDirection: "column",
-        position: "relative",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         overflow: "hidden",
+        paddingTop: "max(0px, var(--safe-area-inset-top))",
+        paddingBottom: "max(0px, var(--safe-area-inset-bottom))",
+        paddingLeft: "max(0px, var(--safe-area-inset-left))",
+        paddingRight: "max(0px, var(--safe-area-inset-right))",
       }}
     >
       {/* Screen Content - Full Screen, Responsive */}
@@ -27,6 +35,7 @@ export function PhoneFrame() {
           overflowX: "hidden",
           WebkitOverflowScrolling: "touch",
           scrollBehavior: "smooth",
+          position: "relative",
         }}
       >
         <Outlet />

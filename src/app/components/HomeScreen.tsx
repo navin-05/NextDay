@@ -154,7 +154,7 @@ export function HomeScreen() {
   ];
 
   return (
-    <div className="relative flex flex-col h-full" style={{ background: "#0D0D0D" }}>
+    <div className="relative flex flex-col h-full" style={{ background: "#0D0D0D", willChange: "transform", transform: "translateZ(0)", WebkitTransform: "translateZ(0)" }}>
       {/* Number Pad Modal */}
       <AnimatePresence>
         {isEditing && (
@@ -409,7 +409,7 @@ export function HomeScreen() {
       </AnimatePresence>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto pb-24 px-5 pt-6">
+      <div className="flex-1 overflow-y-auto pb-24 px-5 pt-6" style={{ WebkitBackfaceVisibility: "hidden", backfaceVisibility: "hidden", transform: "translateZ(0)", WebkitTransform: "translateZ(0)" }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, gap: 16 }}>
           <div style={{ flex: 1 }}>
