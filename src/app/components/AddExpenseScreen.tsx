@@ -29,6 +29,8 @@ export function AddExpenseScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [padInput, setPadInput] = useState("");
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [viewportHeight, setViewportHeight] = useState(window.visualViewport?.height || window.innerHeight);
 
   // Load expense data if editing
   useEffect(() => {
@@ -42,6 +44,25 @@ export function AddExpenseScreen() {
       setNote(expense.note);
     }
   }, [location.state]);
+
+  // Handle keyboard close detection via viewport changes
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const handleResize = () => {
+      const newHeight = viewport.height || window.innerHeight;
+      setViewportHeight(newHeight);
+      
+      // If viewport height increased significantly, keyboard likely closed
+      if (newHeight > viewportHeight * 0.95) {
+        setFocusedInput(null);
+      }
+    };
+
+    viewport.addEventListener("resize", handleResize);
+    return () => viewport.removeEventListener("resize", handleResize);
+  }, [viewportHeight]);
 
   const handlePadKey = (key: string) => {
     if (key === "del") {
@@ -287,22 +308,30 @@ export function AddExpenseScreen() {
 
         {/* Merchant Input */}
         <div className="px-5 mb-4">
-          <input
-            type="text"
-            value={merchant}
-            onChange={(e) => setMerchant(e.target.value)}
-            placeholder="Merchant name (e.g., Swiggy)"
-            style={{
-              width: "100%",
-              padding: "14px 18px",
-              borderRadius: 16,
-              background: "#1C1C1C",
-              border: "1px solid rgba(255,255,255,0.06)",
-              color: "#FFFFFF",
-              fontSize: "14px",
-              outline: "none",
-            }}
-          />
+          <motion.div
+            animate={{ scale: focusedInput === "merchant" ? 1.02 : 1 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          >
+            <input
+              type="text"
+              value={merchant}
+              onChange={(e) => setMerchant(e.target.value)}
+              onFocus={() => setFocusedInput("merchant")}
+              onBlur={() => setFocusedInput(null)}
+              placeholder="Merchant name (e.g., Swiggy)"
+              style={{
+                width: "100%",
+                padding: "14px 18px",
+                borderRadius: 16,
+                background: "#1C1C1C",
+                border: "1px solid rgba(255,255,255,0.06)",
+                color: "#FFFFFF",
+                fontSize: "14px",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </motion.div>
         </div>
 
         {/* Category Grid */}
@@ -366,22 +395,30 @@ export function AddExpenseScreen() {
 
         {/* Note Field */}
         <div className="px-5 mb-4">
-          <input
-            type="text"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Add a note (optional)"
-            style={{
-              width: "100%",
-              padding: "14px 18px",
-              borderRadius: 16,
-              background: "#1C1C1C",
-              border: "1px solid rgba(255,255,255,0.06)",
-              color: "#FFFFFF",
-              fontSize: "14px",
-              outline: "none",
-            }}
-          />
+          <motion.div
+            animate={{ scale: focusedInput === "note" ? 1.02 : 1 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          >
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              onFocus={() => setFocusedInput("note")}
+              onBlur={() => setFocusedInput(null)}
+              placeholder="Add a note (optional)"
+              style={{
+                width: "100%",
+                padding: "14px 18px",
+                borderRadius: 16,
+                background: "#1C1C1C",
+                border: "1px solid rgba(255,255,255,0.06)",
+                color: "#FFFFFF",
+                fontSize: "14px",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </motion.div>
         </div>
       </div>
     </div>
