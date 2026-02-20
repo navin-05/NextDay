@@ -466,10 +466,7 @@ export function HomeScreen() {
         </div>
 
         {/* Budget Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+        <div
           style={{
             borderRadius: 24,
             background: "linear-gradient(135deg, #15803D 0%, #16A34A 60%, #22C55E 100%)",
@@ -574,7 +571,7 @@ export function HomeScreen() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Recent Transactions */}
         <div className="mt-6">
