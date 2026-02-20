@@ -208,5 +208,9 @@
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
+    transform: translate3d(0, 0, 0);
+    -webkit-appearance: none;
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
   }
 }
