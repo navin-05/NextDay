@@ -44,7 +44,7 @@ export function AddExpenseScreen() {
   }, [location.state]);
 
   const handlePadKey = (key: string) => {
-    if (key === "backspace") {
+    if (key === "del") {
       setPadInput((prev) => prev.slice(0, -1));
     } else if (key === "." && padInput.includes(".")) {
       return;

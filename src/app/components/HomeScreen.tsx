@@ -19,25 +19,48 @@ const categoryEmojis: { [key: string]: string } = {
   Custom: "+",
 };
 
+// Helper function to convert date object to YYYY-MM-DD string
+const getDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export function HomeScreen() {
   const navigate = useNavigate();
   const { displayName, dailyBudget } = useUser();
-  const { expenses, deleteExpense } = useExpense();
+  const { expenses, deleteExpense, getExpensesByDate } = useExpense();
   const [budget, setBudget] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [padInput, setPadInput] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+  const [selectedDate, setSelectedDate] = useState<string>(getDateString(new Date()));
 
   // Initialize budget with daily budget from context
   useEffect(() => {
     setBudget(dailyBudget);
   }, [dailyBudget]);
 
+  // Reset selected date to today when component mounts and daily at midnight
+  useEffect(() => {
+    const resetDateIfNeeded = () => {
+      const today = getDateString(new Date());
+      setSelectedDate(today);
+    };
+
+    resetDateIfNeeded();
+
+    // Check every minute if we need to reset
+    const interval = setInterval(resetDateIfNeeded, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Get current date formatted
   const getCurrentDateString = () => {
-    const today = new Date();
+    const date = new Date(selectedDate);
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const months = [
       "January",
@@ -54,12 +77,12 @@ export function HomeScreen() {
       "December",
     ];
 
-    const dayName = days[today.getDay()];
-    const date = today.getDate();
-    const monthName = months[today.getMonth()];
-    const year = today.getFullYear();
+    const dayName = days[date.getDay()];
+    const dateNum = date.getDate();
+    const monthName = months[date.getMonth()];
+    const year = date.getFullYear();
 
-    return `${dayName}, ${date} ${monthName} ${year}`;
+    return `${dayName}, ${dateNum} ${monthName} ${year}`;
   };
 
   const handlePadKey = (key: string) => {
@@ -114,8 +137,11 @@ export function HomeScreen() {
   const today = new Date();
   const calendarDays = getCalendarDays(calendarMonth, calendarYear);
 
-  // Calculate total spent and available budget
-  const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  // Get expenses for the selected date
+  const filteredExpenses = getExpensesByDate(selectedDate);
+
+  // Calculate total spent and available budget for selected date
+  const totalSpent = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   const availableBudget = budget - totalSpent;
 
   const displayValue = padInput === "" ? "0" : padInput;
@@ -338,6 +364,8 @@ export function HomeScreen() {
                     whileTap={day ? { scale: 0.9 } : {}}
                     onClick={() => {
                       if (day) {
+                        const selectedDateString = getDateString(new Date(calendarYear, calendarMonth, day));
+                        setSelectedDate(selectedDateString);
                         setShowCalendar(false);
                       }
                     }}
@@ -354,6 +382,8 @@ export function HomeScreen() {
                         calendarMonth === today.getMonth() &&
                         calendarYear === today.getFullYear()
                           ? "#06795a"
+                          : getDateString(new Date(calendarYear, calendarMonth, day || 1)) === selectedDate && day
+                          ? "rgba(6, 121, 90, 0.5)"
                           : "transparent",
                       color:
                         day &&
@@ -517,7 +547,7 @@ export function HomeScreen() {
             }}
           >
             {[
-              { label: "Spent Today", value: `₹${totalSpent.toFixed(2)}` },
+              { label: "Spent This Day", value: `₹${totalSpent.toFixed(2)}` },
               { label: "Carry Forward", value: `₹${Math.max(0, availableBudget).toFixed(2)}` },
               { label: "Daily Base", value: `₹${dailyBudget}` },
             ].map((item) => (
@@ -560,7 +590,7 @@ export function HomeScreen() {
             </h3>
           </div>
 
-          {expenses.length === 0 ? (
+          {filteredExpenses.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -616,7 +646,7 @@ export function HomeScreen() {
             </motion.div>
           ) : (
             <div style={{ borderRadius: 20, background: "#1C1C1C", border: "1px solid rgba(255,255,255,0.05)", overflow: "hidden" }}>
-              {expenses.map((expense, idx) => (
+              {filteredExpenses.map((expense, idx) => (
                 <motion.div
                   key={expense.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -627,7 +657,7 @@ export function HomeScreen() {
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "16px 20px",
-                    borderBottom: idx !== expenses.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                    borderBottom: idx !== filteredExpenses.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
