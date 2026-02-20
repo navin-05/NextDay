@@ -16,10 +16,6 @@ export function PhoneFrame() {
         right: 0,
         bottom: 0,
         overflow: "hidden",
-        paddingTop: "max(0px, var(--safe-area-inset-top))",
-        paddingBottom: "max(0px, var(--safe-area-inset-bottom))",
-        paddingLeft: "max(0px, var(--safe-area-inset-left))",
-        paddingRight: "max(0px, var(--safe-area-inset-right))",
       }}
     >
       {/* Screen Content - Full Screen, Responsive */}
@@ -36,6 +32,9 @@ export function PhoneFrame() {
           WebkitOverflowScrolling: "touch",
           scrollBehavior: "smooth",
           position: "relative",
+          paddingTop: "max(0px, var(--safe-area-inset-top))",
+          paddingLeft: "max(0px, var(--safe-area-inset-left))",
+          paddingRight: "max(0px, var(--safe-area-inset-right))",
         }}
       >
         <Outlet />
