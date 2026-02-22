@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router";
-import { TrendingUp, Calculator, ChevronRight, ChevronLeft, Calendar, Plus, Pencil, Check, X, Delete, Lock, Trash2, Edit2 } from "lucide-react";
+import { TrendingUp, Calculator, ChevronRight, ChevronLeft, Calendar, Plus, Pencil, Check, X, Delete, Lock, Trash2, Edit2, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect } from "react";
 import { useUser } from "../context/UserContext";
@@ -41,11 +41,13 @@ const formatTime = (timestamp: number): string => {
 export function HomeScreen() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { displayName, dailyBudget } = useUser();
+  const { displayName, dailyBudget, setDailyBudget } = useUser();
   const { expenses, deleteExpense, getExpensesByDate } = useExpense();
   const [budget, setBudget] = useState(0);
+  const [showManageBudget, setShowManageBudget] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [padInput, setPadInput] = useState("");
+  const [budgetPadMode, setBudgetPadMode] = useState<"add" | "reset" | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
@@ -107,7 +109,7 @@ export function HomeScreen() {
   const handlePadKey = (key: string) => {
     if (key === "del") {
       setPadInput((prev) => prev.slice(0, -1));
-    } else if (key === "." && padInput.includes(".")) {
+    } else if (key === "." || key === " ") {
       return;
     } else if (padInput.length >= 7) {
       return;
@@ -117,15 +119,39 @@ export function HomeScreen() {
   };
 
   const confirmBudget = () => {
-    const val = parseFloat(padInput);
-    if (!isNaN(val) && val > 0) setBudget(val);
+    const val = Math.round(parseFloat(padInput));
+    if (isNaN(val) || val < 0) return;
+    if (budgetPadMode === "add") {
+      const newBudget = budget + val;
+      setBudget(newBudget);
+      setDailyBudget(newBudget);
+    } else {
+      setBudget(val);
+      setDailyBudget(val);
+    }
     setIsEditing(false);
     setPadInput("");
+    setBudgetPadMode(null);
   };
 
   const cancelEdit = () => {
     setIsEditing(false);
     setPadInput("");
+    setBudgetPadMode(null);
+  };
+
+  const openAddToBudget = () => {
+    setShowManageBudget(false);
+    setPadInput("");
+    setBudgetPadMode("add");
+    setIsEditing(true);
+  };
+
+  const openResetBudget = () => {
+    setShowManageBudget(false);
+    setPadInput(String(Math.round(Math.max(0, budget))));
+    setBudgetPadMode("reset");
+    setIsEditing(true);
   };
 
   // Get calendar days for a given month/year
@@ -181,20 +207,176 @@ export function HomeScreen() {
             boxShadow: "0 8px 32px rgba(22, 163, 74, 0.25), 0 2px 8px rgba(0,0,0,0.3)",
           };
 
-  const displayValue = padInput === "" ? "0" : padInput;
+  const displayValue = padInput === "" ? "0" : String(Math.round(parseFloat(padInput)) || padInput);
 
   const padKeys = [
     ["1", "2", "3"],
     ["4", "5", "6"],
     ["7", "8", "9"],
-    [".", "0", "del"],
+    [" ", "0", "del"],
   ];
 
   return (
     <div className="relative flex flex-col h-full" style={{ background: "#0D0D0D", willChange: "transform", transform: "translateZ(0)", WebkitTransform: "translateZ(0)" }}>
-      {/* Number Pad Modal */}
+      {/* Manage Budget Dialog */}
       <AnimatePresence>
-        {isEditing && (
+        {showManageBudget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 50,
+              background: "rgba(0,0,0,0.6)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 24,
+            }}
+            onClick={() => setShowManageBudget(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              style={{
+                background: "#1F1F1F",
+                borderRadius: 24,
+                padding: 24,
+                border: "1px solid rgba(255,255,255,0.08)",
+                minWidth: 320,
+                maxWidth: 360,
+                boxShadow: "0 24px 48px rgba(0,0,0,0.4)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 14,
+                      background: "rgba(34, 197, 94, 0.12)",
+                      border: "1px solid rgba(34, 197, 94, 0.35)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Calculator size={22} color="#22C55E" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <p style={{ color: "#FFFFFF", fontSize: "18px", fontWeight: 700, margin: 0 }}>
+                      Manage Budget
+                    </p>
+                    <p style={{ color: "#9CA3AF", fontSize: "13px", margin: "4px 0 0 0" }}>
+                      Add funds or reset
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowManageBudget(false)}
+                  style={{
+                    background: "rgba(255,255,255,0.08)",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: 36,
+                    height: 36,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                  }}
+                >
+                  <X size={18} color="#9CA3AF" />
+                </button>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={openAddToBudget}
+                  style={{
+                    width: "100%",
+                    background: "linear-gradient(135deg, #16A34A 0%, #22C55E 100%)",
+                    border: "none",
+                    borderRadius: 16,
+                    padding: "16px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    cursor: "pointer",
+                    color: "#FFFFFF",
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    boxShadow: "0 4px 16px rgba(34, 197, 94, 0.35)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      background: "rgba(255,255,255,0.25)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Plus size={20} strokeWidth={2.5} />
+                  </div>
+                  Add to Budget
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={openResetBudget}
+                  style={{
+                    width: "100%",
+                    background: "linear-gradient(135deg, #991B1B 0%, #B91C1C 100%)",
+                    border: "none",
+                    borderRadius: 16,
+                    padding: "16px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    cursor: "pointer",
+                    color: "#FFFFFF",
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    boxShadow: "0 4px 16px rgba(185, 28, 28, 0.3)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      background: "rgba(255,255,255,0.2)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <RotateCcw size={18} strokeWidth={2.5} />
+                  </div>
+                  Reset Budget
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Number Pad Modal - Add to Budget / Set New Budget */}
+      <AnimatePresence>
+        {isEditing && budgetPadMode && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -202,8 +384,10 @@ export function HomeScreen() {
             style={{
               position: "absolute",
               inset: 0,
-              zIndex: 50,
-              background: "rgba(0,0,0,0.7)",
+              zIndex: 55,
+              background: "rgba(0,0,0,0.6)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
               display: "flex",
               flexDirection: "column",
               justifyContent: "flex-end",
@@ -211,31 +395,42 @@ export function HomeScreen() {
             onClick={cancelEdit}
           >
             <motion.div
-              initial={{ y: 300 }}
+              initial={{ y: "100%" }}
               animate={{ y: 0 }}
-              exit={{ y: 300 }}
+              exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
               style={{
-                background: "#1C1C1C",
+                background: "#2F2F2F",
                 borderRadius: "24px 24px 0 0",
                 padding: "20px 20px 32px",
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                boxShadow: "0 -4px 24px rgba(0,0,0,0.3)",
               }}
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Handle */}
+              <div
+                style={{
+                  width: 40,
+                  height: 4,
+                  borderRadius: 2,
+                  background: "rgba(255,255,255,0.2)",
+                  margin: "0 auto 20px",
+                }}
+              />
               {/* Header */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                  Set Daily Budget
+                <p style={{ color: "#FFFFFF", fontSize: "13px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  {budgetPadMode === "add" ? "Add to Budget" : "Set New Budget"}
                 </p>
-                <button onClick={cancelEdit} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "50%", width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                  <X size={14} color="rgba(255,255,255,0.6)" />
+                <button onClick={cancelEdit} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <X size={16} color="#9CA3AF" />
                 </button>
               </div>
 
               {/* Display */}
               <div style={{ textAlign: "center", marginBottom: 24, padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "28px", fontWeight: 700 }}>₹</span>
+                <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "28px", fontWeight: 700 }}>₹ </span>
                 <span style={{ color: "#FFFFFF", fontSize: "48px", fontWeight: 800, letterSpacing: "-0.03em", marginLeft: 4 }}>
                   {displayValue}
                 </span>
@@ -249,21 +444,22 @@ export function HomeScreen() {
                       key={`${ri}-${key}`}
                       whileTap={{ scale: 0.92 }}
                       onClick={() => handlePadKey(key)}
+                      disabled={key === " "}
                       style={{
-                        background: key === "del" ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.07)",
-                        border: "1px solid rgba(255,255,255,0.06)",
+                        background: key === "del" ? "rgba(185, 28, 28, 0.25)" : key === " " ? "transparent" : "rgba(255,255,255,0.08)",
+                        border: key === " " ? "none" : "1px solid rgba(255,255,255,0.06)",
                         borderRadius: 14,
                         height: 52,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        cursor: "pointer",
+                        cursor: key === " " ? "default" : "pointer",
                         color: key === "del" ? "#EF4444" : "#FFFFFF",
                         fontSize: key === "del" ? 14 : 20,
                         fontWeight: 600,
                       }}
                     >
-                      {key === "del" ? <Delete size={18} /> : key}
+                      {key === "del" ? <Delete size={18} /> : key === " " ? "" : key}
                     </motion.button>
                   ))
                 )}
@@ -275,7 +471,7 @@ export function HomeScreen() {
                 onClick={confirmBudget}
                 style={{
                   width: "100%",
-                  background: "#2ECC71",
+                  background: "linear-gradient(135deg, #16A34A 0%, #22C55E 100%)",
                   border: "none",
                   borderRadius: 16,
                   height: 52,
@@ -287,10 +483,11 @@ export function HomeScreen() {
                   color: "#FFFFFF",
                   fontSize: "16px",
                   fontWeight: 700,
+                  boxShadow: "0 4px 16px rgba(34, 197, 94, 0.35)",
                 }}
               >
                 <Check size={18} />
-                Confirm Budget
+                {budgetPadMode === "add" ? "Add to Budget" : "Set Budget"}
               </motion.button>
             </motion.div>
           </motion.div>
@@ -763,7 +960,7 @@ export function HomeScreen() {
             Available Budget
           </p>
           <h2
-            onClick={() => setIsEditing(true)}
+            onClick={() => setShowManageBudget(true)}
             style={{
               color: "#FFFFFF",
               fontSize: "40px",
@@ -777,7 +974,7 @@ export function HomeScreen() {
               gap: 8,
             }}
           >
-            ₹{availableBudget.toFixed(2)}
+            ₹{Math.round(availableBudget)}
             <span style={{ opacity: 0.45, fontSize: "18px", fontWeight: 400, marginTop: 4 }}>
               
             </span>
@@ -794,8 +991,8 @@ export function HomeScreen() {
             }}
           >
             {[
-              { label: "Spent This Day", value: `₹${totalSpent.toFixed(2)}` },
-              { label: "Carry Forward", value: `₹${Math.max(0, availableBudget).toFixed(2)}` },
+              { label: "Spent This Day", value: `₹${Math.round(totalSpent)}` },
+              { label: "Carry Forward", value: `₹${Math.round(Math.max(0, availableBudget))}` },
               { label: "Daily Base", value: `₹${dailyBudget}` },
             ].map((item) => (
               <div key={item.label} style={{ textAlign: "center" }}>
