@@ -4,6 +4,14 @@ import { X, Check, Delete } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useExpense, Expense } from "../context/ExpenseContext";
 
+// Helper to format a Date as YYYY-MM-DD
+const getDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const categories = [
   { name: "Food", emoji: "🍔", color: "#F97316" },
   { name: "Transport", emoji: "🚗", color: "#3B82F6" },
@@ -29,10 +37,11 @@ export function AddExpenseScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [padInput, setPadInput] = useState("");
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [expenseDate, setExpenseDate] = useState<string>(() => getDateString(new Date()));
 
   // Load expense data if editing
   useEffect(() => {
-    const state = location.state as { editingExpense?: Expense } | null;
+    const state = location.state as { editingExpense?: Expense; date?: string } | null;
     if (state?.editingExpense) {
       const expense = state.editingExpense;
       setEditingExpenseId(expense.id);
@@ -40,6 +49,11 @@ export function AddExpenseScreen() {
       setMerchant(expense.merchant);
       setSelectedCategory(expense.category);
       setNote(expense.note);
+      setExpenseDate(expense.date);
+    } else if (state?.date) {
+      setExpenseDate(state.date);
+    } else {
+      setExpenseDate(getDateString(new Date()));
     }
   }, [location.state]);
 
@@ -226,15 +240,18 @@ export function AddExpenseScreen() {
                   category: selectedCategory,
                   note
                 });
+                navigate("/", { state: { selectedDate: expenseDate } });
+                return;
               } else {
                 addExpense({
                   amount: parseFloat(amount),
                   merchant,
                   category: selectedCategory,
-                  note
+                  note,
+                  date: expenseDate,
                 });
+                navigate("/", { state: { selectedDate: expenseDate } });
               }
-              navigate("/");
             }
           }}
           style={{

@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { TrendingUp, Calculator, ChevronRight, ChevronLeft, Calendar, Plus, Pencil, Check, X, Delete, Lock, Trash2, Edit2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect } from "react";
@@ -29,6 +29,7 @@ const getDateString = (date: Date): string => {
 
 export function HomeScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { displayName, dailyBudget } = useUser();
   const { expenses, deleteExpense, getExpensesByDate } = useExpense();
   const [budget, setBudget] = useState(0);
@@ -44,19 +45,13 @@ export function HomeScreen() {
     setBudget(dailyBudget);
   }, [dailyBudget]);
 
-  // Reset selected date to today when component mounts and daily at midnight
+  // Restore selected date when returning from add-expense (stay on the date user was viewing)
   useEffect(() => {
-    const resetDateIfNeeded = () => {
-      const today = getDateString(new Date());
-      setSelectedDate(today);
-    };
-
-    resetDateIfNeeded();
-
-    // Check every minute if we need to reset
-    const interval = setInterval(resetDateIfNeeded, 60000);
-    return () => clearInterval(interval);
-  }, []);
+    const state = location.state as { selectedDate?: string } | null;
+    if (state?.selectedDate) {
+      setSelectedDate(state.selectedDate);
+    }
+  }, [location.state]);
 
   // Get current date formatted
   const getCurrentDateString = () => {
@@ -804,7 +799,7 @@ export function HomeScreen() {
 
       {/* FAB */}
       <motion.button
-        onClick={() => navigate("/add-expense")}
+        onClick={() => navigate("/add-expense", { state: { date: selectedDate } })}
         whileTap={{ scale: 0.9 }}
         whileHover={{ scale: 1.05 }}
         style={{

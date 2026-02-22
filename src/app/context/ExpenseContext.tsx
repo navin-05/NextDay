@@ -12,7 +12,7 @@ export interface Expense {
 
 interface ExpenseContextType {
   expenses: Expense[];
-  addExpense: (expense: Omit<Expense, "id" | "timestamp" | "date">) => void;
+  addExpense: (expense: Omit<Expense, "id" | "timestamp">) => void;
   deleteExpense: (id: string) => void;
   updateExpense: (id: string, expense: Omit<Expense, "id" | "timestamp" | "date">) => void;
   getExpensesByDate: (date: string) => Expense[];
@@ -66,17 +66,11 @@ export function ExpenseProvider({ children }: { children: React.ReactNode }) {
     }
   }, [expenses, isLoaded]);
 
-  const addExpense = (expense: Omit<Expense, "id" | "timestamp" | "date">) => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    
+  const addExpense = (expense: Omit<Expense, "id" | "timestamp">) => {
     const newExpense: Expense = {
       ...expense,
       id: Date.now().toString(),
       timestamp: Date.now(),
-      date: `${year}-${month}-${day}`,
     };
     setExpenses((prev) => [newExpense, ...prev]);
   };
