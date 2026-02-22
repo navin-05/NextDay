@@ -3,7 +3,7 @@ import { TrendingUp, Calculator, ChevronRight, ChevronLeft, Calendar, Plus, Penc
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect } from "react";
 import { useUser } from "../context/UserContext";
-import { useExpense } from "../context/ExpenseContext";
+import { useExpense, Expense } from "../context/ExpenseContext";
 
 const categoryEmojis: { [key: string]: string } = {
   Food: "🍔",
@@ -27,6 +27,17 @@ const getDateString = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+// Helper to format timestamp as time (e.g. "11:21 pm")
+const formatTime = (timestamp: number): string => {
+  const d = new Date(timestamp);
+  const hours = d.getHours();
+  const mins = d.getMinutes();
+  const ampm = hours >= 12 ? "pm" : "am";
+  const h = hours % 12 || 12;
+  const m = String(mins).padStart(2, "0");
+  return `${h}:${m} ${ampm}`;
+};
+
 export function HomeScreen() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,6 +50,19 @@ export function HomeScreen() {
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState<string>(getDateString(new Date()));
+  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+
+  // Haptics when delete dialog giggle animation plays (starts at 40% of 0.86s)
+  useEffect(() => {
+    if (!expenseToDelete) return;
+    const giggleStartMs = 0.4 * 0.86 * 1000;
+    const timer = setTimeout(() => {
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate([25, 80, 25, 80, 25, 80, 25]);
+      }
+    }, giggleStartMs);
+    return () => clearTimeout(timer);
+  }, [expenseToDelete]);
 
   // Initialize budget with daily budget from context
   useEffect(() => {
@@ -268,6 +292,219 @@ export function HomeScreen() {
                 <Check size={18} />
                 Confirm Budget
               </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Dialog - Bottom sheet with blur */}
+      <AnimatePresence>
+        {expenseToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 50,
+              background: "rgba(0,0,0,0.55)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "center",
+            }}
+            onClick={() => setExpenseToDelete(null)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{
+                y: ["100%", "0%", "-4px", "4px", "-2px", "2px", "0px"],
+              }}
+              exit={{ y: "100%" }}
+              transition={{
+                y: {
+                  duration: 0.86,
+                  times: [0, 0.4, 0.52, 0.64, 0.76, 0.88, 1],
+                  ease: [0.25, 0.1, 0.25, 1],
+                },
+              }}
+              style={{
+                width: "100%",
+                height: "50vh",
+                minHeight: 320,
+                maxHeight: 420,
+                background: "#282828",
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                padding: "20px 20px 28px",
+                display: "flex",
+                flexDirection: "column",
+                boxShadow: "0 -4px 24px rgba(0,0,0,0.4)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Handle */}
+              <div
+                style={{
+                  width: 40,
+                  height: 4,
+                  borderRadius: 2,
+                  background: "rgba(255,255,255,0.2)",
+                  margin: "0 auto 24px",
+                }}
+              />
+
+              {/* Trash icon */}
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 16,
+                  background: "rgba(240, 79, 71, 0.15)",
+                  border: "1px solid rgba(240, 79, 71, 0.4)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 20px",
+                }}
+              >
+                <Trash2 size={26} color="#F04F47" strokeWidth={2} />
+              </div>
+
+              {/* Title */}
+              <p
+                style={{
+                  color: "#FFFFFF",
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  textAlign: "center",
+                  marginBottom: 6,
+                }}
+              >
+                Delete Transaction?
+              </p>
+              <p
+                style={{
+                  color: "#9CA3AF",
+                  fontSize: "13px",
+                  textAlign: "center",
+                  marginBottom: 20,
+                }}
+              >
+                This action cannot be undone.
+              </p>
+
+              {/* Transaction details card */}
+              <div
+                style={{
+                  background: "#3E3E3E",
+                  borderRadius: 16,
+                  padding: "14px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  marginBottom: 24,
+                }}
+              >
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    background: "rgba(6, 121, 90, 0.15)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "22px",
+                  }}
+                >
+                  {categoryEmojis[expenseToDelete.category] || "💰"}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p
+                    style={{
+                      color: "#FFFFFF",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      margin: 0,
+                    }}
+                  >
+                    {(expenseToDelete.merchant || expenseToDelete.category).charAt(0).toUpperCase() +
+                      (expenseToDelete.merchant || expenseToDelete.category).slice(1)}
+                  </p>
+                  <p
+                    style={{
+                      color: "#9CA3AF",
+                      fontSize: "12px",
+                      margin: "2px 0 0 0",
+                    }}
+                  >
+                    {expenseToDelete.category} · {formatTime(expenseToDelete.timestamp)}
+                  </p>
+                </div>
+                <p
+                  style={{
+                    color: "#F04F47",
+                    fontSize: "15px",
+                    fontWeight: 700,
+                    margin: 0,
+                  }}
+                >
+                  -₹{expenseToDelete.amount.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display: "flex", gap: 12, marginTop: "auto" }}>
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setExpenseToDelete(null)}
+                  style={{
+                    flex: 1,
+                    background: "#3E3E3E",
+                    border: "none",
+                    borderRadius: 14,
+                    height: 52,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "#FFFFFF",
+                    fontSize: "16px",
+                    fontWeight: 600,
+                  }}
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    deleteExpense(expenseToDelete.id);
+                    setExpenseToDelete(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    background: "#F04F47",
+                    border: "none",
+                    borderRadius: 14,
+                    height: 52,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    cursor: "pointer",
+                    color: "#FFFFFF",
+                    fontSize: "16px",
+                    fontWeight: 600,
+                  }}
+                >
+                  <Trash2 size={18} strokeWidth={2} />
+                  Delete
+                </motion.button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -718,7 +955,7 @@ export function HomeScreen() {
                       </motion.button>
                       <motion.button
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => deleteExpense(expense.id)}
+                        onClick={() => setExpenseToDelete(expense)}
                         style={{
                           background: "rgba(239, 68, 68, 0.1)",
                           border: "none",
