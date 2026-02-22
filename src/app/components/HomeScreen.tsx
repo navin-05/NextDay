@@ -139,6 +139,24 @@ export function HomeScreen() {
   const totalSpent = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   const availableBudget = budget - totalSpent;
 
+  // Card color based on spending: 30% spent → yellow, 60% spent → red
+  const percentSpent = budget > 0 ? (totalSpent / budget) * 100 : 0;
+  const budgetCardTheme =
+    percentSpent >= 60
+      ? {
+          background: "linear-gradient(135deg, #991B1B 0%, #B91C1C 60%, #DC2626 100%)",
+          boxShadow: "0 8px 32px rgba(185, 28, 28, 0.25), 0 2px 8px rgba(0,0,0,0.3)",
+        }
+      : percentSpent >= 30
+        ? {
+            background: "linear-gradient(135deg, #B45309 0%, #D97706 60%, #F59E0B 100%)",
+            boxShadow: "0 8px 32px rgba(217, 119, 6, 0.25), 0 2px 8px rgba(0,0,0,0.3)",
+          }
+        : {
+            background: "linear-gradient(135deg, #15803D 0%, #16A34A 60%, #22C55E 100%)",
+            boxShadow: "0 8px 32px rgba(22, 163, 74, 0.25), 0 2px 8px rgba(0,0,0,0.3)",
+          };
+
   const displayValue = padInput === "" ? "0" : padInput;
 
   const padKeys = [
@@ -464,9 +482,9 @@ export function HomeScreen() {
         <div
           style={{
             borderRadius: 24,
-            background: "linear-gradient(135deg, #15803D 0%, #16A34A 60%, #22C55E 100%)",
+            background: budgetCardTheme.background,
             padding: "24px",
-            boxShadow: "0 8px 32px rgba(22, 163, 74, 0.25), 0 2px 8px rgba(0,0,0,0.3)",
+            boxShadow: budgetCardTheme.boxShadow,
             position: "relative",
             overflow: "hidden",
           }}
