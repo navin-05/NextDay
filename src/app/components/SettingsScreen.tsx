@@ -258,7 +258,7 @@ export function SettingsScreen() {
           transition={{ delay: 0.6, duration: 0.5 }}
           className="text-center pb-4"
         >
-          <p style={{ color: "#4B5563", fontSize: "14px", fontWeight: 600, letterSpacing: "0.02em" }}>The RealFinance</p>
+          <p style={{ color: "#4B5563", fontSize: "14px", fontWeight: 600, letterSpacing: "0.02em" }}>The NextDay - Finance</p>
           <p style={{ color: "#374151", fontSize: "11px", marginTop: 4 }}>
             Version 1.0.0
           </p>
