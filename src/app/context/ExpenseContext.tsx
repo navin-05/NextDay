@@ -20,36 +20,16 @@ interface ExpenseContextType {
 
 const ExpenseContext = createContext<ExpenseContextType | undefined>(undefined);
 
-// Helper function to get today's date in YYYY-MM-DD format
-const getTodayDateString = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-// Helper function to reset expenses (clear them and reset timestamp)
-const shouldResetExpenses = (lastResetDate: string | null): boolean => {
-  const today = getTodayDateString();
-  return lastResetDate !== today;
-};
+// (Removed daily reset helpers that cleared all expenses on a new day)
 
 export function ExpenseProvider({ children }: { children: React.ReactNode }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount and handle daily reset
+  // Load from localStorage on mount
   useEffect(() => {
     const savedExpenses = localStorage.getItem("expenses");
-    const lastResetDate = localStorage.getItem("lastResetDate");
-    
-    if (shouldResetExpenses(lastResetDate)) {
-      // Reset to empty and update last reset date
-      localStorage.setItem("lastResetDate", getTodayDateString());
-      localStorage.setItem("expenses", JSON.stringify([]));
-      setExpenses([]);
-    } else if (savedExpenses) {
+    if (savedExpenses) {
       try {
         setExpenses(JSON.parse(savedExpenses));
       } catch (error) {
