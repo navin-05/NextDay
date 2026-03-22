@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect } from "react";
 import { useUser } from "../context/UserContext";
 import { useExpense, Expense } from "../context/ExpenseContext";
+import { useBudget } from "../context/BudgetContext";
 
 const categoryEmojis: { [key: string]: string } = {
   Food: "🍔",
@@ -43,6 +44,7 @@ export function HomeScreen() {
   const location = useLocation();
   const { displayName, dailyBudget, setDailyBudget } = useUser();
   const { expenses, deleteExpense, getExpensesByDate } = useExpense();
+  const { getBudgetDayByDate, budgetHistory } = useBudget();
   const [budget, setBudget] = useState(0);
   const [showManageBudget, setShowManageBudget] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -68,8 +70,44 @@ export function HomeScreen() {
 
   // Initialize budget with daily budget from context
   useEffect(() => {
+    // #region agent log
+    fetch("http://127.0.0.1:7516/ingest/6f410878-f1fe-4e85-b7df-54a767de325f", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "db4fd2" },
+      body: JSON.stringify({
+        sessionId: "db4fd2",
+        location: "HomeScreen.tsx:effect-dailyBudget",
+        message: "global dailyBudget changed; syncing local budget state",
+        data: { dailyBudget, selectedDate },
+        timestamp: Date.now(),
+        hypothesisId: "H2",
+      }),
+    }).catch(() => {});
+    // #endregion
     setBudget(dailyBudget);
   }, [dailyBudget]);
+
+  useEffect(() => {
+    // #region agent log
+    fetch("http://127.0.0.1:7516/ingest/6f410878-f1fe-4e85-b7df-54a767de325f", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "db4fd2" },
+      body: JSON.stringify({
+        sessionId: "db4fd2",
+        location: "HomeScreen.tsx:effect-selectedDate",
+        message: "selectedDate changed; budget state snapshot",
+        data: {
+          selectedDate,
+          dailyBudget,
+          dayOverride: getBudgetDayByDate(selectedDate)?.dailyBudget ?? null,
+          budgetHistoryLen: budgetHistory.length,
+        },
+        timestamp: Date.now(),
+        hypothesisId: "H4",
+      }),
+    }).catch(() => {});
+    // #endregion
+  }, [selectedDate, dailyBudget, budgetHistory]);
 
   // Restore selected date when returning from add-expense (stay on the date user was viewing)
   useEffect(() => {
@@ -121,6 +159,28 @@ export function HomeScreen() {
   const confirmBudget = () => {
     const val = Math.round(parseFloat(padInput));
     if (isNaN(val) || val < 0) return;
+    // #region agent log
+    fetch("http://127.0.0.1:7516/ingest/6f410878-f1fe-4e85-b7df-54a767de325f", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "db4fd2" },
+      body: JSON.stringify({
+        sessionId: "db4fd2",
+        location: "HomeScreen.tsx:confirmBudget",
+        message: "confirmBudget will update global setDailyBudget (same for all dates)",
+        data: {
+          selectedDate,
+          budgetPadMode,
+          val,
+          prevLocalBudget: budget,
+          globalDailyBudgetBefore: dailyBudget,
+          hasDayOverride: Boolean(getBudgetDayByDate(selectedDate)),
+          budgetHistoryLen: budgetHistory.length,
+        },
+        timestamp: Date.now(),
+        hypothesisId: "H1",
+      }),
+    }).catch(() => {});
+    // #endregion
     if (budgetPadMode === "add") {
       const newBudget = budget + val;
       setBudget(newBudget);
