@@ -42,9 +42,9 @@ const formatTime = (timestamp: number): string => {
 export function HomeScreen() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { displayName, dailyBudget, setDailyBudget } = useUser();
+  const { displayName, dailyBudget } = useUser();
   const { expenses, deleteExpense, getExpensesByDate } = useExpense();
-  const { getBudgetDayByDate, budgetHistory } = useBudget();
+  const { getBudgetDayByDate, budgetHistory, addBudgetDay } = useBudget();
   const [budget, setBudget] = useState(0);
   const [showManageBudget, setShowManageBudget] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -68,45 +68,11 @@ export function HomeScreen() {
     return () => clearTimeout(timer);
   }, [expenseToDelete]);
 
-  // Initialize budget with daily budget from context
+  // Effective daily budget for selected date: per-day override in budgetHistory, else global default
   useEffect(() => {
-    // #region agent log
-    fetch("http://127.0.0.1:7516/ingest/6f410878-f1fe-4e85-b7df-54a767de325f", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "db4fd2" },
-      body: JSON.stringify({
-        sessionId: "db4fd2",
-        location: "HomeScreen.tsx:effect-dailyBudget",
-        message: "global dailyBudget changed; syncing local budget state",
-        data: { dailyBudget, selectedDate },
-        timestamp: Date.now(),
-        hypothesisId: "H2",
-      }),
-    }).catch(() => {});
-    // #endregion
-    setBudget(dailyBudget);
-  }, [dailyBudget]);
-
-  useEffect(() => {
-    // #region agent log
-    fetch("http://127.0.0.1:7516/ingest/6f410878-f1fe-4e85-b7df-54a767de325f", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "db4fd2" },
-      body: JSON.stringify({
-        sessionId: "db4fd2",
-        location: "HomeScreen.tsx:effect-selectedDate",
-        message: "selectedDate changed; budget state snapshot",
-        data: {
-          selectedDate,
-          dailyBudget,
-          dayOverride: getBudgetDayByDate(selectedDate)?.dailyBudget ?? null,
-          budgetHistoryLen: budgetHistory.length,
-        },
-        timestamp: Date.now(),
-        hypothesisId: "H4",
-      }),
-    }).catch(() => {});
-    // #endregion
+    const day = getBudgetDayByDate(selectedDate);
+    const effective = day?.dailyBudget ?? dailyBudget;
+    setBudget(effective);
   }, [selectedDate, dailyBudget, budgetHistory]);
 
   // Restore selected date when returning from add-expense (stay on the date user was viewing)
@@ -159,36 +125,16 @@ export function HomeScreen() {
   const confirmBudget = () => {
     const val = Math.round(parseFloat(padInput));
     if (isNaN(val) || val < 0) return;
-    // #region agent log
-    fetch("http://127.0.0.1:7516/ingest/6f410878-f1fe-4e85-b7df-54a767de325f", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "db4fd2" },
-      body: JSON.stringify({
-        sessionId: "db4fd2",
-        location: "HomeScreen.tsx:confirmBudget",
-        message: "confirmBudget will update global setDailyBudget (same for all dates)",
-        data: {
-          selectedDate,
-          budgetPadMode,
-          val,
-          prevLocalBudget: budget,
-          globalDailyBudgetBefore: dailyBudget,
-          hasDayOverride: Boolean(getBudgetDayByDate(selectedDate)),
-          budgetHistoryLen: budgetHistory.length,
-        },
-        timestamp: Date.now(),
-        hypothesisId: "H1",
-      }),
-    }).catch(() => {});
-    // #endregion
-    if (budgetPadMode === "add") {
-      const newBudget = budget + val;
-      setBudget(newBudget);
-      setDailyBudget(newBudget);
-    } else {
-      setBudget(val);
-      setDailyBudget(val);
-    }
+    const newAmount = budgetPadMode === "add" ? budget + val : val;
+    const prevDay = getBudgetDayByDate(selectedDate);
+    addBudgetDay({
+      date: selectedDate,
+      dailyBudget: newAmount,
+      spent: getExpensesByDate(selectedDate).reduce((sum, expense) => sum + expense.amount, 0),
+      carryForward: prevDay?.carryForward ?? 0,
+      lastUpdated: Date.now(),
+    });
+    setBudget(newAmount);
     setIsEditing(false);
     setPadInput("");
     setBudgetPadMode(null);
@@ -1053,7 +999,7 @@ export function HomeScreen() {
             {[
               { label: "Spent This Day", value: `₹${Math.round(totalSpent)}` },
               { label: "Carry Forward", value: `₹${Math.round(Math.max(0, availableBudget))}` },
-              { label: "Daily Base", value: `₹${dailyBudget}` },
+              { label: "Daily Base", value: `₹${budget}` },
             ].map((item) => (
               <div key={item.label} style={{ textAlign: "center" }}>
                 <p
